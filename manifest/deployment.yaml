@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-server-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc
+  template:
+    metadata:
+      labels:
+        app: grpc
+    spec:
+      containers:
+        - name: grpc-server
+          image: 005904641462.dkr.ecr.us-east-2.amazonaws.com/kubernetes-grpc-examples:latest
+          ports:
+            - containerPort: 50051

@@ -1,0 +1,9 @@
+version: "3"
+services:
+  grpc-server:
+    container_name: grpc-server
+    build:
+      context: ./
+      dockerfile: dockerfile
+    ports:
+      - 3000:50051
