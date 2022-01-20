@@ -21,15 +21,59 @@ function sayHello (call, callback) {
  * Implements the SayHelloStream RPC method.
  */
 function sayHelloStream (call, callback) {
-  console.log('Stream function called with: ', call.request.firstname)
+  console.log('Stream function called with: ', call)
   //Lets stream each letter back to the client
-  let str = call.request.firstname;
-  call.write({"message": "Streaming back the firstname, one letter at a time."})
+  let str = call.request.firstname
+  call.write({ message: 'Streaming back the firstname, one letter at a time.' })
   for (var i = 0; i < str.length; i++) {
-    console.log("streaming back:",str.charAt(i))
-    call.write({ "message": str.charAt(i) })
+    console.log('streaming back:', str.charAt(i))
+    call.write({ message: str.charAt(i) })
   }
   call.end()
+}
+
+/**
+ * Implements the SayHelloStream RPC method.
+ */
+function sayHelloClientStream (call, callback) {
+  console.log('Client Stream function called')
+  let firstname = ''
+  call.on('data', function (data) {
+    console.log(`Received:`, data.firstname)
+    firstname += data.firstname
+  })
+
+  call.on('end', function () {
+    callback(null, {
+      message: `Received ${firstname} from sayHelloClientStream`
+    })
+  })
+}
+
+/**
+ * Implements the SayHelloStream RPC method.
+ */
+function sayHelloBiDiStream (call, callback) {
+  console.log('BiDi Stream function called')
+
+  let firstname = ''
+  //Lets stream each letter we get back to the client
+  call.on('data', async (data) => {
+    console.log(`Received:`, data.firstname)
+    firstname += data.firstname
+  })
+
+  call.on('end', async () => {
+    call.write({
+      message: 'Streaming back the firstname, one letter at a time.'
+    })
+
+    for (var i = 0; i < firstname.length; i++) {
+      console.log('streaming back:', firstname.charAt(i))
+      call.write({ message: firstname.charAt(i) })
+    }
+    call.end()
+  })
 }
 
 /**
@@ -37,13 +81,17 @@ function sayHelloStream (call, callback) {
  * sample server port
  */
 function main () {
+  const host = '10.0.0.126' //0.0.0.0 for depoloyment
+
   var server = new grpc.Server()
   server.addService(echoPackage.EchoServer.service, {
     SayHello: sayHello,
-    SayHelloStream: sayHelloStream
+    SayHelloStream: sayHelloStream,
+    SayHelloClientStream: sayHelloClientStream,
+    SayHelloBiDiStream: sayHelloBiDiStream
   })
   server.bindAsync(
-    '0.0.0.0:50051',
+    `${host}:50051`,
     grpc.ServerCredentials.createInsecure(),
     () => {
       server.start()
